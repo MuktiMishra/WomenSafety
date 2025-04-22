@@ -1,20 +1,36 @@
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError } from 'axios';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
 import { BASE_URL } from '../constants';
+import { useNavigation } from '@react-navigation/native';
 
 const Login = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/HomeScreen');
+      }
+    };
+    checkUser();
+  }, []);
 
   const handleLogin = async () => {
-    if (emailOrPhone.trim() === '' || password.trim() === '') {
-      alert('Please fill in all fields');
+    if (!emailOrPhone || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email/phone and password.');
       return;
     }
 
+    setLoading(true);
     try {
       const res = await axios.post(`${BASE_URL}/users/login`, {
         emailOrPhone,
@@ -22,49 +38,89 @@ const Login = () => {
       });
 
       if (res.data?.token) {
-        alert('Login Successful!');
-        // Redirect to HomeScreen after successful login
+        await AsyncStorage.setItem('token', res.data.token);
         router.replace('/HomeScreen');
       } else {
-        alert('Login failed!');
+        Alert.alert('Login Failed', 'No token received from server.');
       }
     } catch (err) {
-      console.log(err.response?.data || err.message);
-      alert(err.response?.data?.error || 'Something went wrong');
+      const axiosError = err as AxiosError;
+
+      if (axiosError.response) {
+        Alert.alert('Login Error', axiosError.response.data?.error || 'Something went wrong');
+        console.error('Error response:', axiosError.response.data);
+      } else {
+        Alert.alert('Network Error', axiosError.message);
+        console.error('Network error:', axiosError.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View className="bg-pink-200 w-screen h-screen justify-center items-center">
-      <Image 
-        source={require('../assets/images/logo.png')} 
-        className="w-72 h-72"
-      />
-      <Text className="text-pink-800 text-3xl font-semibold mt-0 mb-3">Welcome Back!</Text>
-      
-      <TextInput 
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-6"
-        placeholder="Enter Email or Phone"
+    <View style={{ flex: 1, backgroundColor: '#fce4ec', justifyContent: 'center', alignItems: 'center' }}>
+      <Image source={require('../assets/images/logo.png')} style={{ width: 200, height: 200, marginBottom: 20 }} />
+
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#880e4f' }}>Welcome Back!</Text>
+
+      <TextInput
+        placeholder="Email or Phone"
         value={emailOrPhone}
         onChangeText={setEmailOrPhone}
-        keyboardType="default"
+        autoCapitalize="none"
+        style={{
+          width: 300,
+          padding: 12,
+          marginVertical: 10,
+          borderRadius: 10,
+          backgroundColor: '#fff',
+          borderWidth: 1,
+          borderColor: '#ccc',
+        }}
       />
 
-      <TextInput 
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-1"
-        placeholder="Enter Password"
+      <TextInput
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        style={{
+          width: 300,
+          padding: 12,
+          marginVertical: 10,
+          borderRadius: 10,
+          backgroundColor: '#fff',
+          borderWidth: 1,
+          borderColor: '#ccc',
+        }}
       />
 
-      <TouchableOpacity className="w-64 bg-pink-700 p-4 rounded-3xl mt-10" onPress={handleLogin}>
-        <Text className="text-white font-bold text-2xl text-center">Login</Text>
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#ad1457',
+          paddingVertical: 14,
+          paddingHorizontal: 40,
+          borderRadius: 30,
+          marginTop: 20,
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Login</Text>
+        )}
       </TouchableOpacity>
 
-      <Text className="text-pink-700 font-semibold mt-2">
-        Don't have an account? <Text onPress={() => router.push('/signup')} className="underline">Signup</Text>
-      </Text>
+      <TouchableOpacity onPress={() => router.push('/signup')}>
+        <Text style={{ marginTop: 20, color: '#880e4f', textDecorationLine: 'underline' }}>
+          Don't have an account? Sign Up
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };

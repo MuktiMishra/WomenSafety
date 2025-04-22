@@ -11,7 +11,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import axios from 'axios'; // Import axios for HTTP requests
 
-const Settings = ({ user }) => {
+const settings = ({ user }) => {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
@@ -165,4 +165,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Settings;
+export default settings;

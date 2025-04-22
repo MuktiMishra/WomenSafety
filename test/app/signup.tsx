@@ -1,95 +1,128 @@
-import { StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
-import { Link } from 'expo-router';
-import axios from 'axios';
-import { BASE_URL } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import axios, { AxiosError } from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { BASE_URL } from '../constants'; // Ensure this points to your backend IP or deployed URL
 
-const signup = () => {
-  const [fullName, setFullName] = useState('');
+const Signup = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignup = async () => {
-    if (!fullName || !email || !phone || !password) {
-      alert('Please fill in all fields');
-      return;
-    }
+  const router = useRouter();
 
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/HomeScreen');
+      }
+    };
+    checkToken();
+  }, []);
+
+  const handleSignup = async () => {
     try {
       const res = await axios.post(`${BASE_URL}/users/register`, {
-        name: fullName,
+        name,
         email,
         phone,
-        password
+        password,
       });
 
       if (res.data?.token) {
-        setFullName('');
-        setEmail('');
-        setPhone('');
-        setPassword('');
-
-        // Show message
-        alert('Signup successful! Now you can login.');
-       
-        // Optionally: Save token to AsyncStorage
-        // await AsyncStorage.setItem('token', res.data.token);
+        await AsyncStorage.setItem('token', res.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(res.data));
+        router.replace('/HomeScreen');
       } else {
-        alert('Signup failed!');
+        Alert.alert('Signup failed', 'Please try again.');
       }
     } catch (err) {
-      console.log(err.response?.data || err.message);
-      alert(err.response?.data?.error || 'Something went wrong');
+      const axiosError = err as AxiosError;
+      if (axiosError.response) {
+        Alert.alert('Error', axiosError.response.data?.error || 'Something went wrong');
+      } else {
+        Alert.alert('Error', axiosError.message);
+      }
     }
   };
 
   return (
-    <View className="bg-pink-200 w-screen h-screen justify-center items-center">
-      <Text className="text-pink-600 text-5xl font-extrabold">SAFENAARI</Text>
-      <Text className="text-pink-800 text-3xl font-semibold mt-14 mb-5">Create Your Account</Text>
+    <View style={{ flex: 1, backgroundColor: '#fce4ec', justifyContent: 'center', alignItems: 'center' }}>
+      <Image source={require('../assets/images/logo.png')} style={{ width: 200, height: 200, marginBottom: 20 }} />
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#880e4f' }}>Create Account</Text>
 
       <TextInput
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-6"
-        placeholder="Enter Your Full Name"
-        value={fullName}
-        onChangeText={setFullName}
-        keyboardType="default"
+        placeholder="Full Name"
+        value={name}
+        onChangeText={setName}
+        style={inputStyle}
       />
 
       <TextInput
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-1"
-        placeholder="Enter Your Email"
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        style={inputStyle}
         keyboardType="email-address"
       />
 
       <TextInput
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-1"
-        placeholder="Enter Your Phone no."
+        placeholder="Phone"
         value={phone}
         onChangeText={setPhone}
+        style={inputStyle}
         keyboardType="phone-pad"
       />
 
       <TextInput
-        className="w-80 bg-white p-4 rounded-2xl mb-4 border border-gray-300 mt-1"
-        placeholder="Set Password"
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        style={inputStyle}
       />
 
-      <TouchableOpacity className="w-64 bg-pink-700 p-4 rounded-3xl mt-10" onPress={handleSignup}>
-        <Text className="text-white font-bold text-2xl text-center">Sign In</Text>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={handleSignup}
+      >
+        <Text style={buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
-      <Link href="./login" className="text-pink-700 font-semibold mt-5">Already have an account? Login</Link>
-      <Link href="./HomeScreen" className="text-pink-700 font-semibold mt-5">Home Page</Link>
-      <Link href="./settings" className="text-pink-700 font-semibold mt-5">Settings</Link>
+      <TouchableOpacity onPress={() => router.push('/login')}>
+        <Text style={{ marginTop: 20, color: '#880e4f', textDecorationLine: 'underline' }}>
+          Already have an account? Login
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-export default signup;
+const inputStyle = {
+  width: 300,
+  padding: 12,
+  marginVertical: 10,
+  borderRadius: 10,
+  backgroundColor: '#fff',
+  borderWidth: 1,
+  borderColor: '#ccc',
+};
+
+const buttonStyle = {
+  backgroundColor: '#ad1457',
+  paddingVertical: 14,
+  paddingHorizontal: 40,
+  borderRadius: 30,
+  marginTop: 20,
+};
+
+const buttonText = {
+  color: '#fff',
+  fontSize: 18,
+  fontWeight: 'bold',
+};
+
+export default Signup;

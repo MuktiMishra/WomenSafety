@@ -143,38 +143,40 @@ router.post('/delete', async (req, res) => {
 });
 
 // Edit Profile Route
+// Edit Profile Route
 router.put('/editProfile', authenticate, async (req, res) => {
   const { name, email, phone, fakeCallerName } = req.body;
 
   try {
-    const user = await User.findById(req.user); // Get user from authenticated request
+    const user = await User.findById(req.user); // req.user is populated by the authenticate middleware
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Only update fields that were provided
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (fakeCallerName) user.fakeCallerName = fakeCallerName;
+    // Update only provided fields
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (phone !== undefined) user.phone = phone;
+    if (fakeCallerName !== undefined) user.fakeCallerName = fakeCallerName;
 
     await user.save();
 
     res.status(200).json({
       message: 'Profile updated successfully',
-      user: {
+      updatedUser: {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        fakeCallerName: user.fakeCallerName,
-      },
+        fakeCallerName: user.fakeCallerName
+      }
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error updating profile:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 module.exports = router;

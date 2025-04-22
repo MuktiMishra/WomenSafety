@@ -3,10 +3,15 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, TouchableWithoutFeedba
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons'; // Feather has a good 'edit' icon
+import { useRouter } from 'expo-router';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [location, setLocation] = useState<string | null>(null);
+  const [user, setUser] = useState(null);
+  const router = useRouter();
 
   const tapCountRef = useRef(0);
   const lastTapRef = useRef(Date.now());
@@ -92,6 +97,16 @@ const HomeScreen = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const data = await AsyncStorage.getItem('user');
+      if (data) {
+        setUser(JSON.parse(data));
+      }
+    };
+    fetchUser();
+  }, []);
+
   return (
     <TouchableWithoutFeedback onPress={handleScreenTap}>
       <View className="flex-1 bg-pink-200">
@@ -99,9 +114,26 @@ const HomeScreen = () => {
         <View className="bg-pink-300 p-10 pb-14 pt-14 flex-row justify-between items-center">
           <View>
             <Text className="text-lg text-gray-800 font-medium">Hey there👋,</Text>
-            <Text className="text-3xl font-bold text-black">Lucy</Text>
+            <Text className="text-3xl font-bold text-black">{user?.name}</Text>
           </View>
-          <Ionicons name="mic-outline" size={28} color="black" />
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16 }}>
+            <TouchableOpacity onPress={() => {
+              if (user) {
+                router.push({
+                  pathname: '/editProfile',
+                  query: {
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    fakeCallerName: user.fakeCallerName,
+                    token: user.token,
+                  },
+                });
+              }
+            }}>
+              <Feather name="edit" size={28} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Scrollable Content */}
@@ -160,26 +192,36 @@ const HomeScreen = () => {
             <View className="flex-row justify-between space-x-4 gap-2">
               <TouchableOpacity
                 className="bg-pink-400 p-4 rounded-lg items-center flex-1"
-                onPress={() => Linking.openURL('tel:+100')} // Replace with the actual police number
+                onPress={() => Linking.openURL('tel:+100')}
               >
                 <Text className="text-white font-semibold text-base">Call Police</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="bg-pink-400 p-4 rounded-lg items-center flex-1"
-                onPress={() => Linking.openURL('tel:+101')} // Replace with the actual ambulance number
+                onPress={() => Linking.openURL('tel:+101')}
               >
                 <Text className="text-white font-semibold text-base">Call <Text className="text-3xl">🚑</Text></Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="bg-pink-400 p-4 rounded-lg items-center flex-1"
-                onPress={() => Linking.openURL('tel:+181')} // Replace with the actual women helpline number
+                onPress={() => Linking.openURL('tel:+181')}
               >
                 <Text className="text-white font-semibold text-base">Women Helpline</Text>
               </TouchableOpacity>
             </View>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              {user ? (
+                <>
+                  <Text style={{ fontSize: 22 }}>Welcome, {user.name}!</Text>
+                  <Text>Email: {user.email}</Text>
+                  <Text>Phone: {user.phone}</Text>
+                  <Text>{user._id}</Text>
+                </>
+              ) : (
+                <Text>Loading...</Text>
+              )}
+            </View>
           </View>
-
-          
         </ScrollView>
       </View>
     </TouchableWithoutFeedback>

@@ -1,63 +1,107 @@
-import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { BASE_URL } from '../constants'; // Make sure this is correct
 
-const editProfile = () => {
+const EditProfile = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [fakeCallerName, setFakeCallerName] = useState('');
+
+  // Fetch user details from AsyncStorage on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = await AsyncStorage.getItem('user');
+      if (user) {
+        const parsedUser = JSON.parse(user);
+        setName(parsedUser.name || '');
+        setEmail(parsedUser.email || '');
+        setPhone(parsedUser.phone || '');
+        setFakeCallerName(parsedUser.fakeCallerName || '');
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  const handleSaveChanges = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+
+      if (!token) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      const updatedData = {
+        name,
+        email,
+        phone,
+        fakeCallerName
+      };
+
+      console.log('Sending updated data:', updatedData);
+      console.log('Token being sent:', token);
+
+      const res = await axios.put(`${BASE_URL}/users/editProfile`, updatedData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      console.log('Update successful:', res.data);
+      Alert.alert('Success', 'Profile updated successfully!');
+
+      // Optionally update AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(res.data.updatedUser));
+    } catch (error) {
+      console.log('Update error:', error);
+      Alert.alert('Error', 'Failed to update profile');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Top Profile Section */}
-        <View style={styles.header}>
-          <Text style={styles.profileName}>Your Name</Text>
-          <View style={styles.profileIconContainer}>
-            <Ionicons name="person-outline" size={40} color="black" />
-          </View>
-        </View>
+      <Text style={styles.title}>Edit Profile</Text>
 
-        {/* Input Fields */}
-        <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <FontAwesome name="user" size={20} color="black" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Name" placeholderTextColor="black" />
-          </View>
-          <View style={styles.inputWrapper}>
-            <FontAwesome name="phone" size={20} color="black" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Phone no" placeholderTextColor="black" />
-          </View>
-          <View style={styles.inputWrapper}>
-            <FontAwesome name="envelope" size={20} color="black" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Email id" placeholderTextColor="black" />
-          </View>
-          <View style={styles.inputWrapper}>
-            <FontAwesome name="map-marker" size={20} color="black" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Address" placeholderTextColor="black" />
-          </View>
-          <View style={styles.inputWrapper}>
-            <FontAwesome name="lock" size={20} color="black" style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              secureTextEntry
-              placeholderTextColor="black"
-            />
-          </View>
-        </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+      />
 
-        {/* Edit Profile Button */}
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
 
-      
+      <TextInput
+        style={styles.input}
+        placeholder="Phone"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Fake Caller Name"
+        value={fakeCallerName}
+        onChangeText={setFakeCallerName}
+      />
+
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleSaveChanges}>
+        <Text style={styles.buttonText}>Save Changes</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -65,101 +109,37 @@ const editProfile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8bbd0",
+    backgroundColor: '#fce4ec',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
   },
-  scrollContainer: {
-    alignItems: "center",
-    paddingBottom: 100,
-  },
-  header: {
-    width: "100%",
-    backgroundColor: "white",
-    borderBottomLeftRadius: 100,
-    borderBottomRightRadius: 100,
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "black",
-  },
-  profileIconContainer: {
-    backgroundColor: "#f8bbd0",
-    padding: 15,
-    borderRadius: 50,
-    marginTop: 10,
-  },
-  inputContainer: {
-    width: "85%",
-    marginTop: 20,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginVertical: 8,
-    height: 45,
-  },
-  icon: {
-    marginRight: 10,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#880e4f',
+    marginBottom: 20
   },
   input: {
-    flex: 1,
-    fontSize: 16,
-    color: "black",
-    
+    width: '100%',
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc'
   },
-  editButton: {
-    backgroundColor: "#f472b6",
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    marginTop: 20,
+  button: {
+    backgroundColor: '#ad1457',
+    padding: 15,
+    borderRadius: 30,
+    marginTop: 10
   },
-  editButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 70,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  navItem: {
-    alignItems: "center",
-  },
-  navText: {
-    fontSize: 12,
-    color: "black",
-  },
-  emergencyButtonContainer: {
-    position: "absolute",
-    bottom: 25,
-    left: "43%",
-  },
-  emergencyButton: {
-    backgroundColor: "white",
-    borderRadius: 50,
-    padding: 10,
-    elevation: 5,
-    shadowColor: "black",
-  },
-  emergencyIcon: {
-    width: 50,
-    height: 50,
-  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16
+  }
 });
 
-export default editProfile;
+export default EditProfile;
