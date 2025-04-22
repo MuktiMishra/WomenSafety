@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { BASE_URL } from '../constants'; // Make sure this is correct
+import { BASE_URL } from '../constants';
+import { useNavigation } from '@react-navigation/native'; // Import navigation
 
 const EditProfile = () => {
+  const navigation = useNavigation(); // Hook to access navigation
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [fakeCallerName, setFakeCallerName] = useState('');
 
-  // Fetch user details from AsyncStorage on mount
   useEffect(() => {
     const fetchUserData = async () => {
       const user = await AsyncStorage.getItem('user');
@@ -53,11 +54,22 @@ const EditProfile = () => {
       console.log('Update successful:', res.data);
       Alert.alert('Success', 'Profile updated successfully!');
 
-      // Optionally update AsyncStorage
       await AsyncStorage.setItem('user', JSON.stringify(res.data.updatedUser));
     } catch (error) {
       console.log('Update error:', error);
       Alert.alert('Error', 'Failed to update profile');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      Alert.alert('Logged out', 'You have been logged out successfully');
+      navigation.replace('login'); // Adjust the route name if different
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to logout');
     }
   };
 
@@ -95,7 +107,7 @@ const EditProfile = () => {
         onChangeText={setFakeCallerName}
       />
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
 

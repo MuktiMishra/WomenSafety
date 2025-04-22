@@ -92,14 +92,14 @@ const FakeCallScreen = () => {
               style={[styles.circleButton, { backgroundColor: "#d32f2f" }]}
               onPress={handleEndCall}
             >
-              <Text style={styles.circleText}>Decline</Text>
+              <Text style={styles.circleText}>📞</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.circleButton, { backgroundColor: "#388e3c" }]}
               onPress={handleAcceptCall}
             >
-              <Text style={styles.circleText}>Accept</Text>
+              <Text style={styles.circleText}>📞</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -130,7 +130,7 @@ const FakeCallScreen = () => {
             style={[styles.endCallButton, { backgroundColor: "#d32f2f" }]}
             onPress={handleEndCall}
           >
-            <Text style={styles.circleText}>End Call</Text>
+            <Text style={styles.circleText}>📞</Text>
           </TouchableOpacity>
         </>
       )}

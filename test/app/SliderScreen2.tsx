@@ -1,25 +1,33 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const SliderScreen2 = () => {
-  const navigation = useNavigation(); // Use the useNavigation hook
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Pinka 2- Women's Safety App</Text>
-      <Text style={styles.subtitle}>Empowering women with safety tools and resources.</Text>
-      
+      <Text style={styles.title}>Your Safety, Our Priority</Text>
+      <Text style={styles.subtitle}>
+        Safenaari equips you with smart tools and instant support for safe journeys—anytime, anywhere.
+      </Text>
+
+      <Image
+        source={require('../assets/images/women_empowerment2.png')} // Place this image in your assets folder
+        style={styles.image}
+        resizeMode="contain"
+      />
+
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('SliderScreen3')} // Navigate to SliderScreen3
+        onPress={() => navigation.navigate('SliderScreen3')}
       >
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.skipButton}
-        onPress={() => navigation.navigate('HomeScreen')} // Skip and navigate to HomeScreen
+        onPress={() => navigation.navigate('signup')}
       >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
@@ -32,22 +40,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8bbd0', // Pink background
+    backgroundColor: '#f8bbd0',
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#880e4f', // Dark pink
-    marginBottom: 20,
+    color: '#880e4f',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#880e4f',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  image: {
+    width: 260,
+    height: 260,
     marginBottom: 40,
   },
   button: {
     backgroundColor: '#ad1457',
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 40,
     borderRadius: 30,
     marginBottom: 10,
   },

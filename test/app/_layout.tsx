@@ -65,6 +65,10 @@ const RootLayout = () => {
       <Stack.Screen name="AddFriend" options={{ headerShown: false }} />
       <Stack.Screen name="LiveLocationMap" options={{ headerShown: false }} />
       <Stack.Screen name="FakeCallScreen" options={{ headerShown: false }} />
+      <Stack.Screen name="SliderScreen1" options={{ headerShown: false }} />
+      <Stack.Screen name="SliderScreen2" options={{ headerShown: false }} />
+      <Stack.Screen name="SliderScreen3" options={{ headerShown: false }} />
+      
     </Stack>
   );
 };
