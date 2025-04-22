@@ -4,18 +4,31 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { BASE_URL } from '../constants';
 
 const AddFriend = () => {
   const [fullName, setFullName] = useState<string>('');
   const [contactNumber, setContactNumber] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [friends, setFriends] = useState<
-    { id: string; name: string; contact: string }[]
-  >([
-    // 🧪 Dummy Data
-    { id: '1', name: 'Emma Watson', contact: '9876543210' },
-    { id: '2', name: 'Harry Styles', contact: '9988776655' }
-  ]);
+  const [friends, setFriends] = useState<{name: string; phone: string }[]>([]);
+
+  useEffect(() => {
+    const getFriends = async () => {
+      const token = await AsyncStorage.getItem('token')
+
+      const response = await axios.post(`${BASE_URL}/users/getUser`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.status === 200) {
+        setFriends(response.data.data.friends)
+      }
+    }
+
+    getFriends()
+  }, [])
 
   const navigation = useNavigation();
 
@@ -28,7 +41,6 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      // Fake token usage just for demo
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert('Error', 'You must be logged in to add a friend');
@@ -36,19 +48,19 @@ const AddFriend = () => {
         return;
       }
 
-      // TODO: Replace with your actual API request
-      const newFriend = {
-        id: Date.now().toString(),
-        name: fullName,
-        contact: contactNumber
-      };
-
-      // Simulate adding to API
-      setFriends((prev) => [...prev, newFriend]);
+    const response = await axios.post(`${BASE_URL}/users/add`, {name: fullName, phone: contactNumber}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.status === 200) {
+      setFriends((prev) => [...prev, {name: fullName, phone: contactNumber}]);
 
       Alert.alert('Success', 'Friend added successfully!');
       setFullName('');
       setContactNumber('');
+    }
+      
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Something went wrong');
@@ -57,14 +69,26 @@ const AddFriend = () => {
     }
   };
 
-  const handleDeleteFriend = (id: string) => {
+  const handleDeleteFriend = async (phone: string) => {
+
+    const token = await AsyncStorage.getItem('token')
+
     Alert.alert('Delete Friend', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setFriends((prev) => prev.filter((f) => f.id !== id));
+        onPress: async () => {
+          const response = await axios.post(`${BASE_URL}/users/delete`, {phone: phone}, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          if (response.status === 200) {
+            const updatedFriends = friends.filter((item) => item.phone !== phone)
+            setFriends(updatedFriends)
+          }
         }
       }
     ]);
@@ -103,21 +127,21 @@ const AddFriend = () => {
 
       <Text className="text-xl font-bold text-pink-700 mt-8 mb-3">Your Friends</Text>
 
-      <FlatList
+      {Array.isArray(friends) && <FlatList
         data={friends}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.name}
         renderItem={({ item }) => (
           <View className="bg-white p-4 rounded-xl mb-3 flex-row justify-between items-center">
             <View>
               <Text className="text-lg font-semibold text-pink-800">{item.name}</Text>
-              <Text className="text-gray-600">{item.contact}</Text>
+              <Text className="text-gray-600">{item.phone}</Text>
             </View>
-            <TouchableOpacity onPress={() => handleDeleteFriend(item.id)}>
+            <TouchableOpacity onPress={() => {console.log(item.phone); handleDeleteFriend(item.phone)}}>
               <Ionicons name="trash" size={24} color="red" />
             </TouchableOpacity>
           </View>
         )}
-      />
+      />}
     </View>
   );
 };

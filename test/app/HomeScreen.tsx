@@ -6,11 +6,20 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons'; // Feather has a good 'edit' icon
 import { useRouter } from 'expo-router';
+import axios from 'axios'
+import { BASE_URL } from "../constants";
+
+interface user {
+  name: string 
+  email: string 
+  phone: string 
+  friends: any[]
+}
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [location, setLocation] = useState<string | null>(null);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<user | null>(null);
   const router = useRouter();
 
   const tapCountRef = useRef(0);
@@ -33,6 +42,28 @@ const HomeScreen = () => {
       Alert.alert("Emergency Triggered", "Your location has been shared!");
     }
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = await AsyncStorage.getItem('token');
+      console.log(token)
+      
+      const response = await axios.post(`${BASE_URL}/users/getUser`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+
+
+      if (response.status === 200) {
+        return setUser(response.data.data)
+      }
+   
+  }
+
+  fetchUser()
+}, []);
 
   useEffect(() => {
     const getLocation = async () => {
@@ -67,6 +98,8 @@ const HomeScreen = () => {
       return;
     }
 
+    const token = await AsyncStorage.getItem('token')
+
     try {
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
@@ -81,7 +114,12 @@ const HomeScreen = () => {
       const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
       const message = `⚠️ She is in danger!\nCurrent Location: ${locationText}\nTrack here: ${mapsLink}`;
 
-      const phoneNumbers = ["+916397337788", "+918445591780"];
+      const response: any = await axios.post(`${BASE_URL}/users/getUser`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const phoneNumbers = response.data.data.friends.map((item: any) => item.phone)
       const smsRecipients = phoneNumbers.join(",");
       const smsUrl = `sms:${smsRecipients}?body=${encodeURIComponent(message)}`;
 
@@ -97,15 +135,7 @@ const HomeScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const data = await AsyncStorage.getItem('user');
-      if (data) {
-        setUser(JSON.parse(data));
-      }
-    };
-    fetchUser();
-  }, []);
+ 
 
   return (
     <TouchableWithoutFeedback onPress={handleScreenTap}>
@@ -118,18 +148,10 @@ const HomeScreen = () => {
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16 }}>
             <TouchableOpacity onPress={() => {
-              if (user) {
                 router.push({
                   pathname: '/editProfile',
-                  query: {
-                    name: user.name,
-                    email: user.email,
-                    phone: user.phone,
-                    fakeCallerName: user.fakeCallerName,
-                    token: user.token,
-                  },
+                  
                 });
-              }
             }}>
               <Feather name="edit" size={28} color="black" />
             </TouchableOpacity>

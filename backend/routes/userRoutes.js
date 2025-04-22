@@ -13,6 +13,7 @@ const generateToken = (userId) => {
 // Middleware to authenticate users based on JWT token
 const authenticate = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
+  console.log(token)
   if (!token) return res.status(401).json({ error: 'Access denied' });
 
   try {
@@ -78,15 +79,16 @@ router.post('/login', async (req, res) => {
 
 // ADD FRIEND
 // Add Friend Route
-router.post('/add', async (req, res) => {
-  const { userId, name, phone } = req.body;
+router.post('/add', authenticate, async (req, res) => {
+  const { name, phone } = req.body;
+  console.log(name, phone)
 
-  if (!userId || !name || !phone) {
+  if (!name || !phone) {
     return res.status(400).json({ error: 'userId, name, and phone are required' });
   }
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -103,6 +105,8 @@ router.post('/add', async (req, res) => {
     user.friends.push({ name, phone });
     await user.save();
 
+    console.log(user)
+
     res.status(200).json({ message: 'Friend added successfully', friends: user.friends });
   } catch (err) {
     console.error(err);
@@ -111,15 +115,16 @@ router.post('/add', async (req, res) => {
 });
 
 // Delete a friend (no middleware, using userId + phone)
-router.post('/delete', async (req, res) => {
-  const { userId, phone } = req.body;
+router.post('/delete', authenticate, async (req, res) => {
+  const {phone} = req.body;
+  console.log(req.body)
 
-  if (!userId || !phone) {
+  if (!phone) {
     return res.status(400).json({ error: 'userId and phone number are required' });
   }
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -177,6 +182,17 @@ router.put('/editProfile', authenticate, async (req, res) => {
   }
 });
 
+router.post('/getUser', authenticate, async (req, res) => {
+    const user = await User.findById(req.user).select({
+      _id: false,
+      name: true, 
+      friends: true, 
+      email: true, 
+      phone: true
+    }); 
 
+    return res.status(200).json({ data: user });
+
+})
 
 module.exports = router;

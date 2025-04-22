@@ -1,0 +1,4 @@
+ - Hello par username aana chaiye -> done
+ - add friend route -> done
+ - fetch friend dynamically -> done
+ - line no 84 jaha hard coded hai waha pe friends ke fetch hoke aane chaiye
